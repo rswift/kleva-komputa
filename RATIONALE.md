@@ -1,10 +1,21 @@
 # NestJS OpenTelemetry POC: Design Rationale
 
 > **Document Information**  
-> Created by: Claude 3 Opus (Anthropic)  
+> Created by: Claude 3 Opus (Anthropic), Updated by: Claude 3.5 Sonnet (Anthropic)  
 > Date: 19/07/2025  
-> Version: 1.3  
-> AI/LLM Details: This document was created using Claude 3 Opus by Anthropic (version 2023-08-22)
+> Version: 2.0  
+> AI/LLM Details: Originally created using Claude 3 Opus, updated after refactoring by Claude 3.5 Sonnet (claude-3-5-sonnet-20241022)
+
+## Refactoring Notice
+
+**Important**: This implementation has been significantly refactored based on the assessment in [`docs/SONNET_40.md`](./docs/SONNET_40.md). The original complex architecture has been simplified for better clarity and maintainability. See [`docs/40_REFACTOR.md`](./docs/40_REFACTOR.md) for detailed information about the changes made.
+
+The rationale below reflects the original design decisions, but the current implementation follows a much simpler approach focused on:
+
+- Single telemetry service instead of multiple layers
+- Direct OpenTelemetry API usage
+- Simplified configuration
+- Clearer error handling patterns
 
 ## Introduction
 

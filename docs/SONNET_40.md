@@ -13,15 +13,19 @@ After reviewing the NestJS OpenTelemetry POC implementation created by Claude 3 
 ## What Claude 3 Opus Did Well
 
 ### 1. Comprehensive Documentation
+
 The documentation is thorough and well-structured. The RATIONALE.md file provides excellent insight into design decisions, and the README is comprehensive. This level of documentation is exemplary for a POC.
 
 ### 2. Proper NestJS Integration
+
 The dynamic module pattern implementation is correct and follows NestJS conventions well. The use of `forRoot`, `forRootAsync`, and `forFeature` methods provides good flexibility.
 
 ### 3. Environment-Based Configuration
+
 The configuration system properly uses environment variables and provides sensible defaults. The validation logic is comprehensive.
 
 ### 4. Test Coverage
+
 The test suite is extensive and covers most scenarios, including error handling and edge cases.
 
 ## Critical Issues and Improvements
@@ -58,6 +62,7 @@ export class TelemetryService {
 **Problem**: The error handling is inconsistent. Some methods return no-op implementations, others log and continue, and some throw errors. This creates unpredictable behaviour.
 
 **Better Approach**: Establish a clear error handling strategy:
+
 - Critical configuration errors should fail fast
 - Runtime metric recording errors should be logged but not interrupt application flow
 - Provide consistent fallback behaviour
@@ -72,7 +77,8 @@ export class TelemetryService {
 
 **Problem**: The configuration system is overly complex with multiple validation layers and extensive environment variable parsing. For a POC, this is overkill.
 
-**Better Approach**: 
+**Better Approach**:
+
 ```typescript
 interface SimpleConfig {
   serviceName: string;
@@ -98,17 +104,21 @@ const config: SimpleConfig = {
 ## Architectural Concerns
 
 ### 1. Tight Coupling
+
 The services are tightly coupled despite the abstraction layers. The `BusinessMetricsService` depends on `MetricsService`, which depends on `OpenTelemetryService`.
 
 ### 2. Unclear Separation of Concerns
+
 It's unclear why business metrics need a separate service when they could be simple methods on a single telemetry service.
 
 ### 3. Global State Management
+
 The SDK initialisation and global meter provider setup could be simplified and made more predictable.
 
 ## How I Would Implement This Differently
 
 ### 1. Single Telemetry Service
+
 ```typescript
 @Injectable()
 export class TelemetryService implements OnModuleInit, OnApplicationShutdown {
@@ -140,6 +150,7 @@ export class TelemetryService implements OnModuleInit, OnApplicationShutdown {
 ```
 
 ### 2. Simplified Interceptor
+
 ```typescript
 @Injectable()
 export class MetricsInterceptor implements NestInterceptor {
@@ -167,6 +178,7 @@ export class MetricsInterceptor implements NestInterceptor {
 ```
 
 ### 3. Direct Business Metrics
+
 ```typescript
 @Injectable()
 export class ProductService {
@@ -216,12 +228,15 @@ describe('TelemetryService', () => {
 ## Missing Features
 
 ### 1. Tracing Integration
+
 The POC focuses only on metrics but doesn't demonstrate tracing, which is a key OpenTelemetry feature.
 
 ### 2. Real-World Examples
+
 The business metrics are contrived. Real examples with actual database queries or external API calls would be more valuable.
 
 ### 3. Performance Considerations
+
 No discussion of the performance impact of metrics collection or strategies to minimise overhead.
 
 ## Positive Aspects to Retain

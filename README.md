@@ -1,28 +1,30 @@
 # NestJS OpenTelemetry POC
 
 > **Document Information**  
-> Created by: Claude 3 Opus (Anthropic)  
+> Created by: Claude 3 Opus (Anthropic), Refactored by: Claude 3.5 Sonnet (Anthropic)  
 > Date: 19/07/2025  
-> Version: 1.2  
-> AI/LLM Details: This document was created using Claude 3 Opus by Anthropic (version 2023-08-22)
+> Version: 2.0  
+> AI/LLM Details: Originally created using Claude 3 Opus, refactored using Claude 3.5 Sonnet (claude-3-5-sonnet-20241022)
 
-A proof of concept (POC) application demonstrating how OpenTelemetry counters and metrics can be used to instrument a simple API built with NestJS.
+A simplified proof of concept (POC) application demonstrating how OpenTelemetry can be integrated with NestJS for application monitoring.
 
 ## Overview
 
-This project showcases the integration of OpenTelemetry with NestJS to provide comprehensive application monitoring through metrics and counters. The focus is on demonstrating telemetry implementation rather than complex API functionality.
+This project demonstrates a clean, simple integration of OpenTelemetry with NestJS. The implementation focuses on clarity and ease of understanding rather than comprehensive feature coverage, making it ideal for learning and as a foundation for production implementations.
 
-The application implements a simple e-commerce API with products and orders, fully instrumented with OpenTelemetry metrics to track API usage, business operations, and system health.
+**Note**: This implementation has been significantly refactored from the original complex version. See [`docs/SONNET_40.md`](./docs/SONNET_40.md) for the assessment that led to the refactoring and [`docs/40_REFACTOR.md`](./docs/40_REFACTOR.md) for detailed information about the changes made.
+
+The application implements a basic e-commerce API with products and orders, instrumented with essential OpenTelemetry metrics to track HTTP requests and key business events.
 
 ## Features
 
-- **OpenTelemetry Integration**: Seamless integration with NestJS using a custom module
-- **Automatic Instrumentation**: Automatic tracking of HTTP requests, responses, and errors
-- **Custom Business Metrics**: Domain-specific metrics for products and orders
-- **Multiple Exporters**: Support for Console and Prometheus exporters
-- **Environment-based Configuration**: Flexible configuration through environment variables
-- **Comprehensive Documentation**: Detailed explanations of design decisions and implementation
-- **Test Coverage**: Extensive unit tests for all components
+- **Simple OpenTelemetry Integration**: Clean integration with NestJS using a single telemetry service
+- **Automatic HTTP Instrumentation**: Automatic tracking of HTTP requests and response times
+- **Business Metrics**: Key business event tracking (product views, order creation)
+- **Prometheus Export**: Metrics available via Prometheus endpoint
+- **Environment Configuration**: Simple environment variable configuration
+- **Clear Documentation**: Focused documentation for easy understanding
+- **Simplified Testing**: Straightforward test structure
 
 ## Project Structure
 
@@ -67,7 +69,7 @@ npm install
 
 ### Configuration
 
-The application can be configured through environment variables:
+The application can be configured through simple environment variables:
 
 ```bash
 # Core configuration
@@ -75,28 +77,9 @@ PORT=3000
 NODE_ENV=development
 
 # OpenTelemetry configuration
-OTEL_SERVICE_NAME=nestjs-opentelemetry-poc
-OTEL_SERVICE_VERSION=0.1.0
-OTEL_ENABLED=true
-OTEL_ENVIRONMENT=development
-
-# Exporter configuration
-OTEL_EXPORTER_CONSOLE=true
-OTEL_EXPORTER_PROMETHEUS_ENABLED=true
-OTEL_EXPORTER_PROMETHEUS_PORT=9464
-OTEL_EXPORTER_PROMETHEUS_ENDPOINT=/metrics
-
-# Metrics configuration
-OTEL_HOST_METRICS_ENABLED=true
-OTEL_API_METRICS_ENABLED=true
-OTEL_CUSTOM_METRICS_ENABLED=true
-
-# Resource attributes
-OTEL_RESOURCE_ATTRIBUTES=deployment.region=eu-west-1,host.name=my-host
-
-# Export intervals
-OTEL_EXPORT_INTERVAL_MS=60000
-OTEL_EXPORT_TIMEOUT_MS=30000
+OTEL_SERVICE_NAME=nestjs-poc
+PROMETHEUS_PORT=9464
+CONSOLE_EXPORTER=false
 ```
 
 ### Running the Application
@@ -109,6 +92,15 @@ npm run start:dev
 npm run build
 npm run start:prod
 ```
+
+### Quick Start
+
+1. Install dependencies: `npm install`
+2. Start the application: `npm run start:dev`
+3. Visit the health endpoint: <http://localhost:3000/api/health>
+4. View metrics information: <http://localhost:3000/api/metrics>
+5. Access Prometheus metrics: <http://localhost:9464/metrics>
+6. Test the API: <http://localhost:3000/api/products>
 
 ## API Endpoints
 
@@ -153,42 +145,21 @@ The application provides the following API endpoints:
 
 ### Available Metrics
 
-The application provides the following metrics:
+The application provides the following core metrics:
 
-#### API Metrics
+#### HTTP Metrics
 
-- `api.request.count` - Total number of API requests
-  - Attributes: `endpoint`, `method`, `status`
-- `api.request.duration` - API request duration in milliseconds
-  - Attributes: `endpoint`, `method`, `status`
-- `api.error.count` - Total number of API errors
-  - Attributes: `endpoint`, `method`, `status`, `errorType`
-- `api.error.client.count` - Total number of client errors (4xx)
-- `api.error.server.count` - Total number of server errors (5xx)
-- `api.health.check.count` - Total number of health check requests
+- `http.requests.total` - Total number of HTTP requests
+  - Labels: `method`, `route`, `status`
+- `http.duration` - HTTP request duration in milliseconds
+  - Labels: `method`, `route`, `status`
 
 #### Business Metrics
 
-- `business.product.views.total` - Total number of product views
-  - Attributes: `productId`, `category`, `userId` (optional)
-- `business.product.created.count` - Total number of products created
-  - Attributes: `category`, `price`
-- `business.product.updated.count` - Total number of products updated
-  - Attributes: `category`
-- `business.product.deleted.count` - Total number of products deleted
-  - Attributes: `category`
-- `business.product.inventory.current` - Current product inventory levels
-- `business.product.inventory.change` - Changes to product inventory
-  - Attributes: `productId`, `reason`
-- `business.orders.created.total` - Total number of orders created
-  - Attributes: `orderId`, `productCount`, `totalAmount`, `userId` (optional)
-- `business.orders.amount.total` - Total amount of orders
-  - Attributes: `orderId`, `productCount`, `userId` (optional)
-- `business.orders.active.current` - Current number of active orders
-- `business.order.processing.time` - Time taken to process an order in milliseconds
-  - Attributes: `orderId`, `status`
-- `business.order.cancelled.count` - Total number of cancelled orders
-  - Attributes: `itemCount`, `totalAmount`
+- `business.product.views` - Total number of product views
+  - Labels: `productId`, `category`, `userId` (optional)
+- `business.orders.created` - Total number of orders created
+  - Labels: `orderId`, `productCount`, `totalAmount`, `userId` (optional)
 
 ### Viewing Metrics
 
@@ -208,65 +179,34 @@ scrape_configs:
       - targets: ['localhost:9464']
 ```
 
-## OpenTelemetry Module
+## Telemetry Module
 
-The application includes a custom OpenTelemetry module that provides:
+The application includes a simplified telemetry module that provides:
 
-- **Dynamic Configuration**: Support for both static and dynamic configuration
-- **Multiple Registration Methods**:
-  - `forRoot`: For static configuration known at compile time
-  - `forRootAsync`: For dynamic configuration loaded at runtime
-  - `forFeature`: For registering the module without initializing the SDK
-- **Metrics Service**: A simplified API for creating and recording metrics
-- **Business Metrics Service**: Domain-specific metrics for business operations
-- **Automatic Instrumentation**: Interceptors and filters for automatic metrics collection
+- **Single Service**: One `TelemetryService` handles all telemetry needs
+- **Automatic HTTP Instrumentation**: Interceptor automatically tracks HTTP requests
+- **Business Metrics**: Direct methods for recording key business events
+- **Simple Configuration**: Environment variable based setup
 
 ### Usage Example
 
 ```typescript
-// Static configuration
+// Simple module import
 @Module({
-  imports: [
-    OpenTelemetryModule.forRoot({
-      serviceName: 'my-service',
-      serviceVersion: '1.0.0',
-      environment: 'production',
-      exporters: {
-        console: true,
-        prometheus: {
-          enabled: true,
-          port: 9464,
-          endpoint: '/metrics',
-        },
-      },
-    }),
-  ],
+  imports: [TelemetryModule],
 })
 export class AppModule {}
 
-// Async configuration
-@Module({
-  imports: [
-    OpenTelemetryModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        serviceName: configService.get('OTEL_SERVICE_NAME'),
-        serviceVersion: configService.get('OTEL_SERVICE_VERSION'),
-        environment: configService.get('NODE_ENV'),
-        exporters: {
-          console: configService.get('OTEL_EXPORTER_CONSOLE') === 'true',
-          prometheus: {
-            enabled: configService.get('OTEL_EXPORTER_PROMETHEUS_ENABLED') === 'true',
-            port: parseInt(configService.get('OTEL_EXPORTER_PROMETHEUS_PORT') || '9464', 10),
-            endpoint: configService.get('OTEL_EXPORTER_PROMETHEUS_ENDPOINT') || '/metrics',
-          },
-        },
-      }),
-      inject: [ConfigService],
-    }),
-  ],
-})
-export class AppModule {}
+// Using the service in your code
+@Injectable()
+export class MyService {
+  constructor(private telemetry: TelemetryService) {}
+  
+  async doSomething() {
+    // Record business metrics directly
+    this.telemetry.recordProductView('product-123', 'electronics');
+  }
+}
 ```
 
 ## Testing
@@ -288,7 +228,9 @@ npm run test:e2e
 
 For more detailed information about the design decisions and implementation approach, please refer to the following documents:
 
-- [RATIONALE.md](./RATIONALE.md) - Detailed explanation of design decisions and trade-offs
+- [RATIONALE.md](./RATIONALE.md) - Original design decisions and trade-offs
+- [docs/SONNET_40.md](./docs/SONNET_40.md) - Assessment of the original implementation
+- [docs/40_REFACTOR.md](./docs/40_REFACTOR.md) - Detailed refactoring documentation
 
 ## License
 

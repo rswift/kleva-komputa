@@ -1,121 +1,122 @@
 # Architecture Diagram
 
 > **Document Information**  
-> Created by: Claude 3 Opus (Anthropic)  
+> Created by: Claude 3 Opus (Anthropic), Updated by: Claude 3.5 Sonnet (Anthropic)  
 > Date: 19/07/2025  
-> Version: 1.1  
-> AI/LLM Details: This document was created using Claude 3 Opus by Anthropic (version 2023-08-22)
+> Version: 2.0  
+> AI/LLM Details: Originally created using Claude 3 Opus, updated after refactoring by Claude 3.5 Sonnet (claude-3-5-sonnet-20241022)
 
-## System Architecture
+## Refactoring Notice
 
-The following diagram illustrates the high-level architecture of the NestJS OpenTelemetry POC application:
+**Important**: This architecture has been significantly simplified based on the refactoring documented in [`../40_REFACTOR.md`](../40_REFACTOR.md). The original complex architecture with multiple service layers has been replaced with a streamlined approach.
+
+## Simplified System Architecture
+
+The following diagram illustrates the simplified architecture of the refactored NestJS OpenTelemetry POC application:
 
 ```mermaid
 graph TD
     subgraph "NestJS Application"
         A[Client Request] --> B[NestJS HTTP Server]
-        B --> C[Metrics Interceptor]
+        B --> C[Telemetry Interceptor]
         C --> D[API Controllers]
         D --> E[Services]
         E --> F[Repositories]
         
-        G[Error Metrics Filter] -.-> B
-        
-        subgraph "OpenTelemetry Module"
-            H[OpenTelemetry Service]
-            I[Metrics Service]
-            J[Business Metrics Service]
-            K[HTTP Instrumentation]
-            
-            H <--> I
-            I <--> J
+        subgraph "Telemetry Module"
+            G[Telemetry Service]
         end
         
-        C <--> I
-        D <--> J
-        G <--> I
+        C --> G
+        E --> G
         
-        subgraph "Exporters"
-            L[Console Exporter]
-            M[Prometheus Exporter]
-            N[OTLP HTTP Exporter]
+        subgraph "OpenTelemetry SDK"
+            H[Prometheus Exporter]
+            I[Console Exporter]
         end
         
-        H --> L
-        H --> M
-        H --> N
+        G --> H
+        G --> I
     end
     
-    O[Prometheus Server] <--> M
-    P[Grafana] <--> O
+    J[Prometheus Server] <--> H
+    K[Grafana] <--> J
     
-    style OpenTelemetry Module fill:#f9f,stroke:#333,stroke-width:2px
-    style Exporters fill:#bbf,stroke:#333,stroke-width:1px
+    style "Telemetry Module" fill:#f9f,stroke:#333,stroke-width:2px
+    style "OpenTelemetry SDK" fill:#bbf,stroke:#333,stroke-width:1px
 ```
 
-## Component Interactions
+## Simplified Component Interactions
 
-The diagram shows the following key components and their interactions:
+The refactored architecture shows the following streamlined components and their interactions:
 
 1. **Client Request**: External requests to the API endpoints.
 
 2. **NestJS HTTP Server**: The core NestJS server that handles incoming HTTP requests.
 
-3. **Metrics Interceptor**: A global interceptor that captures metrics for all API requests, including timing, status codes, and request parameters.
+3. **Telemetry Interceptor**: A simplified global interceptor that captures essential metrics for all API requests (method, route, status, duration).
 
 4. **API Controllers**: The controllers that handle specific API endpoints for products, orders, health, and metrics.
 
-5. **Services**: Business logic services that implement the application functionality.
+5. **Services**: Business logic services that implement the application functionality and record business metrics directly.
 
 6. **Repositories**: Data access layer that simulates database operations.
 
-7. **Error Metrics Filter**: A global exception filter that captures and records metrics for all errors.
+7. **Telemetry Module**: A simplified NestJS module that provides OpenTelemetry integration:
+   - **Telemetry Service**: Single unified service that handles all telemetry concerns including SDK initialization, metric creation, and recording.
 
-8. **OpenTelemetry Module**: A custom NestJS module that provides OpenTelemetry integration:
-   - **OpenTelemetry Service**: Core service that initialises and manages the OpenTelemetry SDK.
-   - **Metrics Service**: Service that provides a simplified API for creating and recording metrics.
-   - **Business Metrics Service**: Service that provides domain-specific metrics for business operations.
-   - **HTTP Instrumentation**: Automatic instrumentation for HTTP requests and responses.
+8. **OpenTelemetry SDK**: The standard OpenTelemetry SDK with direct configuration:
+   - **Prometheus Exporter**: Exports metrics in Prometheus format via HTTP endpoint on port 9464.
+   - **Console Exporter**: Optional console output for debugging.
 
-9. **Exporters**: Components that export metrics to different destinations:
-   - **Console Exporter**: Exports metrics to the console for debugging.
-   - **Prometheus Exporter**: Exports metrics in Prometheus format via an HTTP endpoint.
-   - **OTLP HTTP Exporter**: Exports metrics using the OpenTelemetry Protocol over HTTP.
+9. **Prometheus Server**: External Prometheus server that scrapes metrics from the application.
 
-10. **Prometheus Server**: External Prometheus server that scrapes metrics from the application.
+10. **Grafana**: External Grafana instance that visualises metrics from Prometheus.
 
-11. **Grafana**: External Grafana instance that visualises metrics from Prometheus.
-
-## Data Flow
+## Simplified Data Flow
 
 1. A client sends an HTTP request to the NestJS application.
-2. The request passes through the Metrics Interceptor, which records the start time.
+2. The request passes through the Telemetry Interceptor, which records the start time.
 3. The request is routed to the appropriate controller and handler.
 4. The handler calls the necessary services and repositories to process the request.
-5. During processing, business metrics are recorded using the Business Metrics Service.
-6. The response is generated and passed back through the Metrics Interceptor.
-7. The Metrics Interceptor records the end time and calculates the request duration.
-8. The Metrics Interceptor records API metrics using the Metrics Service.
-9. If an error occurs, the Error Metrics Filter captures it and records error metrics.
-10. The OpenTelemetry Service periodically exports all collected metrics via the configured exporters.
-11. External systems like Prometheus and Grafana can access and visualise the exported metrics.
+5. During processing, business metrics are recorded directly using the Telemetry Service.
+6. The response is generated and passed back through the Telemetry Interceptor.
+7. The Telemetry Interceptor calculates the request duration and records HTTP metrics directly.
+8. The Telemetry Service uses pre-created OpenTelemetry instruments to record metrics efficiently.
+9. The OpenTelemetry SDK automatically exports metrics via the Prometheus exporter.
+10. External systems like Prometheus and Grafana can access and visualise the exported metrics.
 
-## Configuration Flow
+## Simplified Configuration Flow
 
 ```mermaid
 graph TD
-    A[Environment Variables] --> B[OpenTelemetryConfigFactory]
-    B --> C[loadTelemetryConfig]
-    C --> D[validateTelemetryConfig]
-    D --> E[OpenTelemetryModuleOptions]
-    E --> F[OpenTelemetryModule.forRootAsync]
-    F --> G[OpenTelemetryService]
-    G --> H[Initialise SDK]
-    H --> I[Configure Exporters]
-    H --> J[Configure Metrics]
+    A[Environment Variables] --> B[TelemetryService Constructor]
+    B --> C[Simple Config Object]
+    C --> D[TelemetryModule Import]
+    D --> E[onModuleInit]
+    E --> F[NodeSDK Creation]
+    F --> G[SDK Start]
+    G --> H[Prometheus Exporter Ready]
     
-    style OpenTelemetryConfigFactory fill:#f9f,stroke:#333,stroke-width:2px
-    style OpenTelemetryService fill:#f9f,stroke:#333,stroke-width:2px
+    style TelemetryService fill:#f9f,stroke:#333,stroke-width:2px
+    style "Simple Config Object" fill:#bbf,stroke:#333,stroke-width:1px
 ```
 
-This configuration flow shows how the application loads and validates configuration from environment variables, then uses it to initialise the OpenTelemetry SDK and configure exporters and metrics.
+This simplified configuration flow shows how the application directly reads environment variables, creates a simple configuration object, and initialises the OpenTelemetry SDK without complex validation or factory patterns.
+
+## Key Architectural Changes
+
+The refactored architecture eliminates:
+
+- **Multiple service layers** (OpenTelemetryService, MetricsService, BusinessMetricsService → TelemetryService)
+- **Complex configuration factory** (Direct environment variable reading)
+- **Custom interfaces** (Direct OpenTelemetry API usage)
+- **Error metrics filter** (Simplified error handling through logging)
+- **Complex validation** (Simple, fail-fast configuration)
+
+This results in:
+
+- **67% fewer services** (3 → 1)
+- **80% less configuration code**
+- **Direct API usage** for better performance
+- **Easier maintenance** and understanding
