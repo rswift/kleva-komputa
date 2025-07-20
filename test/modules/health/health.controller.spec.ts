@@ -1,29 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HealthController } from '../../../src/modules/health/health.controller';
-import { OpenTelemetryService } from '../../../src/common/telemetry/opentelemetry.service';
-import { MetricsService } from '../../../src/common/telemetry/metrics.service';
+import { TelemetryService } from '../../../src/common/telemetry/telemetry.service';
 
-// Mock the OpenTelemetryService
-const mockOpenTelemetryService = {
-  getConfiguration: jest.fn().mockReturnValue({
+// Mock the TelemetryService
+const mockTelemetryService = {
+  getConfig: jest.fn().mockReturnValue({
     serviceName: 'test-service',
-    serviceVersion: '1.0.0',
-    enabled: true,
     environment: 'test',
-    exporters: {
-      console: true,
-      prometheus: {
-        enabled: true,
-        endpoint: '/metrics',
-      },
-    },
-  }),
-};
-
-// Mock the MetricsService
-const mockMetricsService = {
-  createCounter: jest.fn().mockReturnValue({
-    add: jest.fn(),
+    prometheusPort: 9464,
+    consoleExporter: false,
   }),
 };
 
@@ -44,12 +29,8 @@ describe('HealthController', () => {
       controllers: [HealthController],
       providers: [
         {
-          provide: OpenTelemetryService,
-          useValue: mockOpenTelemetryService,
-        },
-        {
-          provide: MetricsService,
-          useValue: mockMetricsService,
+          provide: TelemetryService,
+          useValue: mockTelemetryService,
         },
       ],
     }).compile();
@@ -76,14 +57,10 @@ describe('HealthController', () => {
       jest.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
       
       // Mock the startTime property
-      const startTime = Date.now() - 3600000; // 1 hour ago
+      const startTime = mockDate.getTime() - 3600000; // 1 hour ago
       Object.defineProperty(controller, 'startTime', { value: startTime });
       
-      // Mock the healthCheckCounter
-      const addSpy = jest.fn();
-      Object.defineProperty(controller, 'healthCheckCounter', {
-        value: { add: addSpy },
-      });
+      // No need to mock counter since we simplified the health controller
       
       // Act
       const result = await controller.getHealth();
@@ -96,15 +73,9 @@ describe('HealthController', () => {
         version: expect.any(String),
         environment: 'test',
         telemetry: {
-          enabled: true,
           serviceName: 'test-service',
-          exporters: {
-            console: true,
-            prometheus: {
-              enabled: true,
-              endpoint: '/metrics',
-            },
-          },
+          prometheusPort: 9464,
+          consoleExporter: false,
         },
         memory: {
           rss: 100,
@@ -113,17 +84,14 @@ describe('HealthController', () => {
           external: 10,
         },
       });
-      
-      // Should record a health check metric
-      expect(addSpy).toHaveBeenCalledWith(1);
     });
     
-    it('should create a counter for health checks during initialization', () => {
+    it('should use the telemetry service for configuration', async () => {
+      // Act
+      await controller.getHealth();
+      
       // Assert
-      expect(mockMetricsService.createCounter).toHaveBeenCalledWith(
-        'api.health.check.count',
-        'Count of health check requests'
-      );
+      expect(mockTelemetryService.getConfig).toHaveBeenCalled();
     });
   });
 });

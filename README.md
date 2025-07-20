@@ -65,6 +65,9 @@ git clone [repository-url]
 
 # Install dependencies
 npm install
+
+# If you encounter dependency issues, try:
+npm install --legacy-peer-deps
 ```
 
 ### Configuration
@@ -96,11 +99,46 @@ npm run start:prod
 ### Quick Start
 
 1. Install dependencies: `npm install`
-2. Start the application: `npm run start:dev`
-3. Visit the health endpoint: <http://localhost:3000/api/health>
-4. View metrics information: <http://localhost:3000/api/metrics>
-5. Access Prometheus metrics: <http://localhost:9464/metrics>
-6. Test the API: <http://localhost:3000/api/products>
+2. Build the application: `npm run build`
+3. Start the application: `npm run start:dev`
+4. Visit the health endpoint: <http://localhost:3000/api/health>
+5. View metrics information: <http://localhost:3000/api/metrics>
+6. Access Prometheus metrics: <http://localhost:9464/metrics>
+7. Test the API: <http://localhost:3000/api/products>
+
+### Troubleshooting
+
+If you encounter errors during setup:
+
+1. **Verify Setup**: Run `npm run verify` to check for common issues
+2. **Dependency Issues**: Try `npm install --legacy-peer-deps`
+3. **TypeScript Errors**: Run `npm run build` to check for compilation issues
+4. **Port Conflicts**: Change the PORT environment variable if 3000 is in use
+5. **Missing Types**: Ensure all `@types/*` packages are installed
+
+### Setup Verification
+
+Run the setup verification script to check for common issues:
+
+```bash
+npm run verify
+```
+
+This will check for missing files, dependency issues, and TypeScript compilation problems.
+
+### Issues Fixed
+
+The compilation errors that were occurring were caused by:
+
+1. **Broken Test Imports**: Test files were importing deleted services
+2. **Incorrect Supertest Import**: Integration test used wrong import syntax
+3. **Unused Dependencies**: Several OpenTelemetry packages were included but not used
+4. **Missing Type Definitions**: Missing `@types/uuid` package
+
+All these issues have been resolved:
+- ✅ `npm run build` - TypeScript compilation successful
+- ✅ Application starts without errors
+- ✅ All endpoints accessible
 
 ## API Endpoints
 
@@ -173,10 +211,10 @@ Example Prometheus configuration:
 
 ```yaml
 scrape_configs:
-  - job_name: 'nestjs-opentelemetry-poc'
+  - job_name: "nestjs-opentelemetry-poc"
     scrape_interval: 15s
     static_configs:
-      - targets: ['localhost:9464']
+      - targets: ["localhost:9464"]
 ```
 
 ## Telemetry Module
@@ -201,10 +239,10 @@ export class AppModule {}
 @Injectable()
 export class MyService {
   constructor(private telemetry: TelemetryService) {}
-  
+
   async doSomething() {
     // Record business metrics directly
-    this.telemetry.recordProductView('product-123', 'electronics');
+    this.telemetry.recordProductView("product-123", "electronics");
   }
 }
 ```

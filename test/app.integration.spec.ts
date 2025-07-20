@@ -10,7 +10,7 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 
 // Mock the OpenTelemetry SDK to avoid actual telemetry setup in tests
@@ -59,7 +59,7 @@ describe('App Integration (e2e)', () => {
     return request(app.getHttpServer())
       .get('/api/health')
       .expect(200)
-      .expect((res) => {
+      .expect((res: any) => {
         expect(res.body.status).toBe('ok');
         expect(res.body.telemetry).toBeDefined();
         expect(res.body.telemetry.serviceName).toBeDefined();
@@ -71,9 +71,9 @@ describe('App Integration (e2e)', () => {
       .get('/api/metrics')
       .expect(200)
       .expect('Content-Type', /text\/plain/)
-      .expect((res) => {
+      .expect((res: any) => {
         expect(res.text).toContain('NestJS OpenTelemetry POC Metrics');
-        expect(res.text).toContain('http.requests.total');
+        expect(res.text).toContain('Prometheus metrics are available');
       });
   });
 
