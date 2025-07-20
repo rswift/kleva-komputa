@@ -102,7 +102,7 @@ npm run start:prod
 2. Build the application: `npm run build`
 3. Start the application: `npm run start:dev`
 4. Visit the health endpoint: <http://localhost:3000/api/health>
-5. View metrics information: <http://localhost:3000/api/metrics>
+5. View metrics information: <http://localhost:3000/metrics>
 6. Access Prometheus metrics: <http://localhost:9464/metrics>
 7. Test the API: <http://localhost:3000/api/products>
 
@@ -136,6 +136,7 @@ The compilation errors that were occurring were caused by:
 4. **Missing Type Definitions**: Missing `@types/uuid` package
 
 All these issues have been resolved:
+
 - ✅ `npm run build` - TypeScript compilation successful
 - ✅ Application starts without errors
 - ✅ All endpoints accessible
@@ -177,7 +178,8 @@ The application provides the following API endpoints:
 
 ### Metrics API
 
-- `GET /metrics` - View current metrics in Prometheus format
+- `GET /metrics` - View metrics information and available metrics
+- `GET http://localhost:9464/metrics` - View actual Prometheus metrics data
 
 ## Telemetry
 
@@ -203,9 +205,10 @@ The application provides the following core metrics:
 
 Metrics can be viewed in the following ways:
 
-- **Console Output**: If the console exporter is enabled, metrics will be periodically printed to the console.
-- **Prometheus Endpoint**: If the Prometheus exporter is enabled, metrics will be available at the `/metrics` endpoint in Prometheus format.
-- **Grafana Integration**: The Prometheus metrics can be visualised in Grafana by configuring a Prometheus data source.
+- **Metrics Information**: Visit `http://localhost:3000/metrics` for information about available metrics
+- **Prometheus Endpoint**: Actual metrics data is available at `http://localhost:9464/metrics` in Prometheus format
+- **Console Output**: If the console exporter is enabled, metrics will be periodically printed to the console
+- **Grafana Integration**: The Prometheus metrics can be visualised in Grafana by configuring a Prometheus data source
 
 Example Prometheus configuration:
 

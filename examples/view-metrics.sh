@@ -1,25 +1,33 @@
 #!/bin/bash
 # Example script demonstrating how to view and interpret metrics from the NestJS OpenTelemetry POC
 
-# Set the base URL for the API
-BASE_URL="http://localhost:3000"
+# Set the base URLs
+API_URL="http://localhost:3000"
+METRICS_URL="http://localhost:9464"
 
 # Function to fetch and filter metrics
 function fetch_metrics() {
   local filter=$1
   
   if [ -z "$filter" ]; then
-    # Fetch all metrics
-    curl -s "$BASE_URL/metrics"
+    # Fetch all metrics from Prometheus endpoint
+    curl -s "$METRICS_URL/metrics"
   else
-    # Fetch and filter metrics
-    curl -s "$BASE_URL/metrics" | grep -E "$filter"
+    # Fetch and filter metrics from Prometheus endpoint
+    curl -s "$METRICS_URL/metrics" | grep -E "$filter"
   fi
+}
+
+# Function to show metrics info
+function show_metrics_info() {
+  echo "Metrics information from NestJS:"
+  curl -s "$API_URL/metrics"
+  echo ""
 }
 
 # Check if the application is running
 echo "Checking if the application is running..."
-health_response=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/api/health")
+health_response=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/api/health")
 
 if [ "$health_response" != "200" ]; then
   echo "Error: Application is not running. Please start the application first."
@@ -29,11 +37,13 @@ fi
 echo "Application is running. Starting metrics examples..."
 echo ""
 
-# View all metrics
-echo "Example 1: View all metrics"
-echo "This will show all metrics exported by the application."
-echo "To view all metrics, run:"
-echo "curl $BASE_URL/metrics"
+# View metrics information
+echo "Example 1: View metrics information"
+echo "This will show information about available metrics."
+show_metrics_info
+echo ""
+echo "To view actual Prometheus metrics, run:"
+echo "curl $METRICS_URL/metrics"
 echo ""
 echo "Press Enter to continue..."
 read
@@ -131,7 +141,7 @@ global:
 scrape_configs:
   - job_name: 'nestjs-opentelemetry-poc'
     static_configs:
-      - targets: ['localhost:3000']
+      - targets: ['localhost:9464']
 EOF
 echo "---"
 echo ""

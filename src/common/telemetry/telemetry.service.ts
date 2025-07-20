@@ -31,13 +31,12 @@ export class TelemetryService implements OnModuleInit, OnApplicationShutdown {
   private sdk?: NodeSDK;
   private readonly config: TelemetryConfig;
   
-  // Pre-created instruments for common metrics
-  // Direct OpenTelemetry API usage eliminates wrapper overhead
-  private readonly meter = metrics.getMeter('nestjs-poc');
-  readonly httpRequests: Counter;
-  readonly httpDuration: Histogram;
-  readonly productViews: Counter;
-  readonly orderCreated: Counter;
+  // Instruments will be created after SDK initialization
+  private meter: any;
+  httpRequests: Counter;
+  httpDuration: Histogram;
+  productViews: Counter;
+  orderCreated: Counter;
   
   constructor() {
     // Simplified configuration - no complex parsing or validation
@@ -47,8 +46,13 @@ export class TelemetryService implements OnModuleInit, OnApplicationShutdown {
       prometheusPort: parseInt(process.env.PROMETHEUS_PORT || '9464', 10),
       consoleExporter: process.env.CONSOLE_EXPORTER === 'true',
     };
+  }
+  
+  private createInstruments() {
+    // Create meter after SDK is initialized
+    this.meter = metrics.getMeter('nestjs-poc');
     
-    // Create instruments once during construction
+    // Create instruments
     this.httpRequests = this.meter.createCounter('http.requests.total', {
       description: 'Total number of HTTP requests',
     });
@@ -71,6 +75,12 @@ export class TelemetryService implements OnModuleInit, OnApplicationShutdown {
     this.logger.log(`Initialising telemetry for service: ${this.config.serviceName}`);
     
     try {
+      // Create the Prometheus exporter
+      const prometheusExporter = new PrometheusExporter({
+        port: this.config.prometheusPort,
+        endpoint: '/metrics',
+      });
+      
       // Simple, direct SDK configuration
       this.sdk = new NodeSDK({
         resource: new Resource({
@@ -78,14 +88,15 @@ export class TelemetryService implements OnModuleInit, OnApplicationShutdown {
           [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
           [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: this.config.environment,
         }),
-        metricReader: new PrometheusExporter({
-          port: this.config.prometheusPort,
-          endpoint: '/metrics',
-        }),
+        metricReader: prometheusExporter,
       });
       
       await this.sdk.start();
       this.logger.log(`Telemetry started - Prometheus metrics available on port ${this.config.prometheusPort}`);
+      
+      // Create instruments after SDK is started
+      this.createInstruments();
+      this.logger.log('Telemetry instruments created');
       
       // Add console exporter if requested
       if (this.config.consoleExporter) {
@@ -116,6 +127,11 @@ export class TelemetryService implements OnModuleInit, OnApplicationShutdown {
    * Direct metric recording without wrapper methods improves performance
    */
   recordHttpRequest(method: string, route: string, status: number, duration: number) {
+    if (!this.httpRequests || !this.httpDuration) {
+      this.logger.debug('Telemetry not initialized yet, skipping HTTP metrics');
+      return;
+    }
+    
     const labels = { method, route, status: status.toString() };
     
     try {
@@ -132,6 +148,11 @@ export class TelemetryService implements OnModuleInit, OnApplicationShutdown {
    * Business metrics are handled directly without separate service layer
    */
   recordProductView(productId: string, category: string, userId?: string) {
+    if (!this.productViews) {
+      this.logger.debug('Telemetry not initialized yet, skipping product view metrics');
+      return;
+    }
+    
     const labels: Record<string, string> = { productId, category };
     if (userId) {
       labels.userId = userId;
@@ -149,6 +170,11 @@ export class TelemetryService implements OnModuleInit, OnApplicationShutdown {
    * Simplified business metric recording
    */
   recordOrderCreation(orderId: string, productCount: number, totalAmount: number, userId?: string) {
+    if (!this.orderCreated) {
+      this.logger.debug('Telemetry not initialized yet, skipping order creation metrics');
+      return;
+    }
+    
     const labels: Record<string, string | number> = { 
       orderId, 
       productCount, 

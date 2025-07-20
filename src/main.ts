@@ -23,8 +23,10 @@ async function bootstrap() {
   // Create NestJS application instance
   const app = await NestFactory.create(AppModule);
   
-  // Set global prefix for all routes
-  app.setGlobalPrefix('api');
+  // Set global prefix for all routes except metrics
+  app.setGlobalPrefix('api', {
+    exclude: ['/metrics'],
+  });
   
   // Get the telemetry service from the application context
   const telemetryService = app.get(TelemetryService);

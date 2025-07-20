@@ -137,9 +137,11 @@ make_request "PUT" "/orders/$new_order_id/cancel"
 
 # View metrics
 echo "Example 13: View metrics"
-echo "Metrics are available at http://localhost:3000/metrics"
+echo "Metrics information is available at http://localhost:3000/metrics"
+echo "Actual Prometheus metrics are available at http://localhost:9464/metrics"
 echo "You can view them in your browser or using curl:"
-echo "curl http://localhost:3000/metrics"
+echo "curl http://localhost:3000/metrics  # Metrics information"
+echo "curl http://localhost:9464/metrics  # Actual Prometheus metrics"
 echo ""
 
 # Generate some errors to demonstrate error metrics
@@ -160,4 +162,7 @@ echo "Generating 400 Bad Request error for order processing..."
 make_request "PUT" "/orders/$order_id/process"
 
 echo "API usage examples completed."
-echo "You can now view the metrics at http://localhost:3000/metrics to see the impact of these API calls."
+echo "You can now view:"
+echo "- Metrics information at http://localhost:3000/metrics"
+echo "- Actual Prometheus metrics at http://localhost:9464/metrics"
+echo "to see the impact of these API calls."
