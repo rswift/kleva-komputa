@@ -41,9 +41,6 @@ graph TD
     
     J[Prometheus Server] <--> H
     K[Grafana] <--> J
-    
-    style "Telemetry Module" fill:#f9f,stroke:#333,stroke-width:2px
-    style "OpenTelemetry SDK" fill:#bbf,stroke:#333,stroke-width:1px
 ```
 
 ## Simplified Component Interactions
@@ -97,9 +94,6 @@ graph TD
     E --> F[NodeSDK Creation]
     F --> G[SDK Start]
     G --> H[Prometheus Exporter Ready]
-    
-    style TelemetryService fill:#f9f,stroke:#333,stroke-width:2px
-    style "Simple Config Object" fill:#bbf,stroke:#333,stroke-width:1px
 ```
 
 This simplified configuration flow shows how the application directly reads environment variables, creates a simple configuration object, and initialises the OpenTelemetry SDK without complex validation or factory patterns.
